@@ -1,62 +1,100 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <AssemblyName>ThatsLit.Sync</AssemblyName>
-    <LangVersion>8.0</LangVersion>
-    <Version>1.3100.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Version>1.3110.0</Version>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- folder switch -->
-    <EFTPath>..\..\..</EFTPath>
-    <ManagedAssembliesPath>$(EFTPath)\EscapeFromTarkov_Data\Managed</ManagedAssembliesPath>
-    <BepInExPath>$(EFTPath)\BepInEx\core</BepInExPath>
+    <!-- Local References Configuration -->
+    <ReferencesPath>$(ProjectDir)..\References</ReferencesPath>
+    <BepInExReferencesPath>$(ReferencesPath)\BepInEx</BepInExReferencesPath>
+    <SPTReferencesPath>$(ReferencesPath)\SPT</SPTReferencesPath>
+    <GameReferencesPath>$(ReferencesPath)\Game</GameReferencesPath>
+    <FikaReferencesPath>$(ReferencesPath)\Fika</FikaReferencesPath>
+    <AssemblySearchPaths>$(BepInExReferencesPath);$(SPTReferencesPath);$(GameReferencesPath);$(FikaReferencesPath);</AssemblySearchPaths>
+    
+    <!-- Fallback SPT Path Configuration (for deployment only) -->
+    <EFTPath Condition="'$(EFTPath)' == ''">..\..</EFTPath>
     <PluginsPath>$(EFTPath)\BepInEx\plugins</PluginsPath>
-    <AssemblySearchPaths>$(BepInExPath);$(ManagedAssembliesPath);$(PluginsPath)\spt;.\FikaRef;$(PluginsPath)\ThatsLit</AssemblySearchPaths>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- BepInEx References -->
     <Reference Include="BepInEx">
-      <HintPath>$(BepInExPath)\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExReferencesPath)\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>$(BepInExPath)\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExReferencesPath)\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    
+    <!-- SPT References -->
     <Reference Include="spt-reflection">
-      <HintPath>$(PluginsPath)\spt\spt-reflection.dll</HintPath>
+      <HintPath>$(SPTReferencesPath)\spt-reflection.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    
+    <!-- Game References -->
     <Reference Include="Assembly-CSharp">
-      <HintPath>$(ManagedAssembliesPath)\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(GameReferencesPath)\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Comfort">
-      <HintPath>$(ManagedAssembliesPath)\Comfort.dll</HintPath>
-    </Reference>
-    <Reference Include="Fika.Core">
-      <HintPath>.\FikaRef\Fika.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="ItemComponent.Types" />
-    <Reference Include="UnityEngine" />
-    <Reference Include="UnityEngine.CoreModule" />
-    <Reference Include="UnityEngine.UI" />
-    <Reference Include="UnityEngine.JSONSerializeModule" />
-    <Reference Include="UnityEngine.IMGUIModule" />
-    <Reference Include="UnityEngine.PhysicsModule.dll">
-      <HintPath>$(ManagedAssembliesPath)\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>$(GameReferencesPath)\Comfort.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.TerrainModule.dll">
-      <HintPath>$(ManagedAssembliesPath)\UnityEngine.TerrainModule.dll</HintPath>
+    <Reference Include="ItemComponent.Types">
+      <HintPath>$(GameReferencesPath)\ItemComponent.Types.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule" />
+    <Reference Include="UnityEngine">
+      <HintPath>$(GameReferencesPath)\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GameReferencesPath)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameReferencesPath)\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>$(GameReferencesPath)\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GameReferencesPath)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(GameReferencesPath)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainModule">
+      <HintPath>$(GameReferencesPath)\UnityEngine.TerrainModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GameReferencesPath)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    
+    <!-- Optional Fika Reference -->
+    <Reference Include="Fika.Core" Condition="Exists('$(FikaReferencesPath)\Fika.Core.dll')">
+      <HintPath>$(FikaReferencesPath)\Fika.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    
+    <!-- Core Plugin Reference (built from local project) -->
     <Reference Include="ThatsLit.Core">
-      <HintPath>$(PluginsPath)\ThatsLit\ThatsLit.Core.dll</HintPath>
+      <HintPath>..\ThatsLit.Core\bin\$(Configuration)\net48\ThatsLit.Core.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
 
@@ -100,6 +138,11 @@
     <Reference Update="System.Runtime.Serialization">
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+
+  <!-- Project Dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="..\ThatsLit.Core\ThatsLit.Core.csproj" />
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="Build">

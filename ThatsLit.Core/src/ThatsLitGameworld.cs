@@ -11,7 +11,7 @@ using System.Collections;
 
 using BaseCellClass = GClass1169;
 using CellClass = GClass1170;
-using SpatialPartitionClass = GClass1184<GClass1169>;
+using SpatialPartitionClass = GClass1184;
 using System.Reflection;
 using GPUInstancer;
 using HarmonyLib;
@@ -750,6 +750,10 @@ namespace ThatsLit
                 if (prototype == null) detailMapData.Add(null);
                 int[,] detailLayer = new int[prototype.detailResolution, prototype.detailResolution];
                 detailMapData.Add(detailLayer);
+                
+                // TODO: SPT 3.11.x API Update Required - Spatial partition API changed
+                // This section needs to be updated for the new API
+                /*
                 var resolutionPerCell = prototype.detailResolution / spData.cellRowAndCollumnCountPerTerrain;
                 for (int terrainCellX = 0; terrainCellX < spData.cellRowAndCollumnCountPerTerrain; ++terrainCellX)
                 {
@@ -772,6 +776,7 @@ namespace ThatsLit
                         yield return waitNextFrame;
                     }
                 }
+                */
             }
             Logger.LogInfo($"[{ activeRaidSettings.LocationId }] Finished building detail map of {terrain.name} at { Time.time }... Costed { Time.time - time }");
         }

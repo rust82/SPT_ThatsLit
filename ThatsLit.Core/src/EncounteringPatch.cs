@@ -163,45 +163,110 @@ namespace ThatsLit.Patches.Vision
             if (!__state.triggered || __instance.Owner?.Memory?.GoalEnemy != __instance)
                 return; // Not triggering the patch OR the bot is engaging others
 
-            var aim = __instance.Owner?.AimingData;
-            if (aim == null)
-                return;
-
             ThatsLitPlugin.swEncountering.MaybeResume();
 
+            // SPT 3.11.x Compatible Implementation - Uses alternative approach since AimingData was removed
             var caution = __instance.Owner.Id % 10;
             BotImpactType botImpactType = Utility.GetBotImpactType(__instance.Owner?.Profile?.Info?.Settings?.Role ?? WildSpawnType.assault);
             float rand = UnityEngine.Random.Range(0f, 1f);
             rand *= rand;
             float rand2 = UnityEngine.Random.Range(0f, 1f);
             rand2 *= rand2;
+
+            // Store encounter state for alternative implementation
+            var encounterData = GetOrCreateEncounterData(__instance.Owner);
+            
             if (__state.botSprinting)
             {
-                // Force a ~0.45s delay
-                aim.SetNextAimingDelay(
-                    (caution * 0.01f + rand * (0.25f + caution * 0.01f))
+                // Calculate delay for sprinting bot encounter (~0.45s scaled by factors)
+                float delayMultiplier = (caution * 0.01f + rand * (0.25f + caution * 0.01f))
                     * (__state.unexpected? 1f : 0.5f)
                     * (caution * 0.01f + Mathf.InverseLerp(0, 25, __state.visionDeviation))
-                    * (botImpactType == BotImpactType.BOSS? 0.25f : botImpactType == BotImpactType.FOLLOWER? 0.5f : 1f));
+                    * (botImpactType == BotImpactType.BOSS? 0.25f : botImpactType == BotImpactType.FOLLOWER? 0.5f : 1f);
 
-                // ~30% chance to force a miss
-                if (rand2 < 0.225f  * (__state.unexpected? 1f : 0.5f) * Mathf.InverseLerp(0, 30, __state.visionDeviation) + 0.2f * Mathf.InverseLerp(0, 5, __instance.Person?.Velocity.magnitude ?? 0))
-                    aim.NextShotMiss();
+                encounterData.SetAimingDelay(delayMultiplier);
+
+                // ~30% chance to force inaccuracy for next shots
+                if (rand2 < 0.225f * (__state.unexpected? 1f : 0.5f) * Mathf.InverseLerp(0, 30, __state.visionDeviation) + 0.2f * Mathf.InverseLerp(0, 5, __instance.Person?.Velocity.magnitude ?? 0))
+                    encounterData.ForceNextMiss();
             }
             else if (__state.unexpected)
             {
-                // Force a ~0.15s delay
-                aim.SetNextAimingDelay(
-                    rand * (0.18f + caution * 0.01f)
+                // Calculate delay for unexpected encounter (~0.15s scaled by factors)
+                float delayMultiplier = rand * (0.18f + caution * 0.01f)
                     * Mathf.InverseLerp(0, 25f, __state.visionDeviation)
-                    * (botImpactType == BotImpactType.BOSS? 0.25f : botImpactType == BotImpactType.FOLLOWER? 0.5f : 1f));
+                    * (botImpactType == BotImpactType.BOSS? 0.25f : botImpactType == BotImpactType.FOLLOWER? 0.5f : 1f);
 
-                // ~40% chance to force a miss
+                encounterData.SetAimingDelay(delayMultiplier);
+
+                // ~40% chance to force inaccuracy for next shots
                 if (rand2 < 0.225f * Mathf.InverseLerp(0, 40f, __state.visionDeviation) + 0.2f * Mathf.InverseLerp(0, 5, __instance.Person?.Velocity.magnitude ?? 0))
-                    aim.NextShotMiss();
+                    encounterData.ForceNextMiss();
             }
 
             ThatsLitPlugin.swEncountering.Stop();
+        }
+
+        // Alternative implementation for SPT 3.11.x - stores encounter state per bot
+        private static System.Collections.Generic.Dictionary<string, BotEncounterData> _encounterDataCache = 
+            new System.Collections.Generic.Dictionary<string, BotEncounterData>();
+
+        private static BotEncounterData GetOrCreateEncounterData(BotOwner botOwner)
+        {
+            if (!_encounterDataCache.TryGetValue(botOwner.ProfileId, out var data))
+            {
+                data = new BotEncounterData(botOwner);
+                _encounterDataCache[botOwner.ProfileId] = data;
+            }
+            return data;
+        }
+
+        // Public method for other patches to access encounter data
+        public static BotEncounterData GetEncounterData(string profileId)
+        {
+            return _encounterDataCache.TryGetValue(profileId, out var data) ? data : null;
+        }
+
+        // Helper class to manage bot encounter state without AimingData
+        public class BotEncounterData
+        {
+            public float AimingDelayUntil { get; private set; }
+            public int ForcedMissCount { get; private set; }
+            public BotOwner BotOwner { get; }
+
+            public BotEncounterData(BotOwner botOwner)
+            {
+                BotOwner = botOwner;
+                AimingDelayUntil = 0f;
+                ForcedMissCount = 0;
+            }
+
+            public void SetAimingDelay(float delayMultiplier)
+            {
+                // Scale base delay (0.5s) by multiplier
+                AimingDelayUntil = UnityEngine.Time.time + (0.5f * delayMultiplier);
+            }
+
+            public void ForceNextMiss()
+            {
+                // Force next 1-3 shots to have reduced accuracy
+                ForcedMissCount = UnityEngine.Random.Range(1, 4);
+            }
+
+            public bool ShouldDelayAiming()
+            {
+                return UnityEngine.Time.time < AimingDelayUntil;
+            }
+
+            public bool ShouldForceMiss()
+            {
+                if (ForcedMissCount > 0)
+                {
+                    ForcedMissCount--;
+                    return true;
+                }
+                return false;
+            }
         }
     }
 }
